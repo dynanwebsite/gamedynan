@@ -9,13 +9,18 @@ const ctx = cv.getContext('2d');
 let selectedChar = null;
 let lastT = 0;
 
-// ---------- INIT ----------
+// ---------- RESIZE ----------
 function resize() {
-  G.W = cv.width  = window.innerWidth;
-  G.H = cv.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  G.W = window.innerWidth;
+  G.H = window.innerHeight;
+  cv.width  = G.W;
+  cv.height = G.H;
+  cv.style.width  = G.W + 'px';
+  cv.style.height = G.H + 'px';
 }
 window.addEventListener('resize', resize);
-resize();
+window.addEventListener('orientationchange', resize);
 
 // ---------- MENU HANDLERS ----------
 document.querySelectorAll('.card').forEach(card => {
@@ -40,9 +45,19 @@ document.getElementById('retryBtn').addEventListener('click', () => {
   startGame();
 });
 
+// ---------- MOBILE SKILL BUTTONS ----------
+document.querySelectorAll('.mob-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!G.running || G.paused) return;
+    G.player.useSkill(parseInt(btn.dataset.skill));
+  });
+});
+
 // ---------- FLOW ----------
 function startGame() {
   if (!selectedChar) return;
+  resize();
+
   document.getElementById('start').classList.add('hidden');
   document.getElementById('over').classList.add('hidden');
   document.getElementById('pause').classList.add('hidden');
@@ -58,12 +73,13 @@ function startGame() {
   G.wave = 0;
   G.time = 0;
   G.player = new Player(selectedChar);
-  G.cam.x = 0;
-  G.cam.y = 0;
+  G.cam.x = G.player.x;
+  G.cam.y = G.player.y;
   G.running = true;
   G.paused = false;
 
-  document.getElementById('port').style.background =
+  const port = document.getElementById('port');
+  if (port) port.style.background =
     `linear-gradient(135deg, ${CHARS[selectedChar].color}, #000)`;
 
   startWave(1);
@@ -99,12 +115,13 @@ function loop(t) {
 
 function update(dt) {
   const p = G.player;
+  if (!p) return;
 
-  G.cam.x = lerp(G.cam.x, p.x, 0.12);
-  G.cam.y = lerp(G.cam.y, p.y, 0.12);
+  G.cam.x = lerp(G.cam.x, p.x, 0.15);
+  G.cam.y = lerp(G.cam.y, p.y, 0.15);
 
-  mouse.wx = mouse.x - G.W/2 + G.cam.x;
-  mouse.wy = mouse.y - G.H/2 + G.cam.y;
+  mouse.wx = mouse.x - G.W / 2 + G.cam.x;
+  mouse.wy = mouse.y - G.H / 2 + G.cam.y;
 
   p.update(dt);
 
@@ -116,7 +133,6 @@ function update(dt) {
     if (pr.life <= 0) G.projs.splice(i, 1);
   }
 
-  // Effects update
   for (let i = G.effects.length - 1; i >= 0; i--) {
     const e = G.effects[i];
     e.life -= dt;
@@ -143,7 +159,6 @@ function update(dt) {
     if (e.life <= 0) G.effects.splice(i, 1);
   }
 
-  // Particles
   for (let i = G.particles.length - 1; i >= 0; i--) {
     const pt = G.particles[i];
     pt.x += pt.vx * dt;
@@ -161,9 +176,11 @@ function update(dt) {
 
 // ---------- RENDER ----------
 function render() {
-  ctx.clearRect(0, 0, G.W, G.H);
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, G.W, G.H);
+
   ctx.save();
-  ctx.translate(G.W/2 - G.cam.x, G.H/2 - G.cam.y);
+  ctx.translate(G.W / 2 - G.cam.x, G.H / 2 - G.cam.y);
 
   drawGrid();
   drawLoot(ctx);
@@ -175,7 +192,7 @@ function render() {
   for (const pt of G.particles) {
     ctx.globalAlpha = clamp(pt.life / pt.max, 0, 1);
     ctx.beginPath();
-    ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI*2);
+    ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2);
     ctx.fillStyle = pt.c;
     ctx.fill();
   }
@@ -188,14 +205,14 @@ function render() {
 function drawGrid() {
   const size = 100;
   const cx = G.cam.x, cy = G.cam.y;
-  const sx = Math.floor((cx - G.W/2) / size) * size;
-  const sy = Math.floor((cy - G.H/2) / size) * size;
-  ctx.strokeStyle = 'rgba(100,120,180,0.08)';
+  const sx = Math.floor((cx - G.W / 2) / size) * size;
+  const sy = Math.floor((cy - G.H / 2) / size) * size;
+  ctx.strokeStyle = 'rgba(100,120,180,0.10)';
   ctx.lineWidth = 1;
-  for (let x = sx; x < cx + G.W/2 + size; x += size) {
+  for (let x = sx; x < cx + G.W / 2 + size; x += size) {
     ctx.beginPath(); ctx.moveTo(x, cy - G.H); ctx.lineTo(x, cy + G.H); ctx.stroke();
   }
-  for (let y = sy; y < cy + G.H/2 + size; y += size) {
+  for (let y = sy; y < cy + G.H / 2 + size; y += size) {
     ctx.beginPath(); ctx.moveTo(cx - G.W, y); ctx.lineTo(cx + G.W, y); ctx.stroke();
   }
 }
@@ -208,13 +225,13 @@ function drawEffect(e) {
     ctx.rotate(e.a);
     ctx.beginPath();
     ctx.arc(0, 0, e.r, -0.6, 0.6);
-    ctx.strokeStyle = `rgba(255,255,255,${a})`;
-    ctx.lineWidth = 8*a + 2;
+    ctx.strokeStyle = 'rgba(255,255,255,' + a + ')';
+    ctx.lineWidth = 8 * a + 2;
     ctx.stroke();
   }
   else if (e.t === 'aoe') {
     ctx.beginPath();
-    ctx.arc(e.x, e.y, e.r * (1.2 - a*0.4), 0, Math.PI*2);
+    ctx.arc(e.x, e.y, e.r * (1.2 - a * 0.4), 0, Math.PI * 2);
     ctx.strokeStyle = e.c;
     ctx.lineWidth = 6;
     ctx.globalAlpha = a;
@@ -226,7 +243,7 @@ function drawEffect(e) {
   else if (e.t === 'meteor') {
     if (!e.hit) {
       ctx.beginPath();
-      ctx.arc(e.x, e.y, e.r * a, 0, Math.PI*2);
+      ctx.arc(e.x, e.y, e.r * a, 0, Math.PI * 2);
       ctx.strokeStyle = e.c;
       ctx.lineWidth = 4;
       ctx.setLineDash([10, 8]);
@@ -234,7 +251,7 @@ function drawEffect(e) {
       ctx.setLineDash([]);
     } else {
       ctx.beginPath();
-      ctx.arc(e.x, e.y, e.r * a, 0, Math.PI*2);
+      ctx.arc(e.x, e.y, e.r * a, 0, Math.PI * 2);
       ctx.fillStyle = e.c;
       ctx.globalAlpha = a * 0.6;
       ctx.fill();
@@ -242,7 +259,7 @@ function drawEffect(e) {
   }
   else if (e.t === 'zone') {
     ctx.beginPath();
-    ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+    ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
     ctx.fillStyle = e.c;
     ctx.globalAlpha = a * 0.2;
     ctx.fill();
@@ -266,5 +283,8 @@ function drawEffect(e) {
 }
 
 // ---------- BOOT ----------
-initInput(cv);
-requestAnimationFrame(loop);
+window.addEventListener('load', () => {
+  resize();
+  initInput(cv);
+  requestAnimationFrame(loop);
+});
