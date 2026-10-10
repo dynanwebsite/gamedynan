@@ -2,7 +2,10 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Eternal Realms - Action RPG</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -10,26 +13,46 @@
 <div id="game">
   <canvas id="cv"></canvas>
 
+  <!-- ================= HUD ================= -->
   <div id="hud">
+    <!-- Panel Karakter (kiri atas) -->
     <div class="panel">
       <div class="portrait" id="port">⚔️</div>
       <div class="bars">
-        <div class="bar"><div class="hp-fill" id="hpf"></div><span id="hpt">100/100</span></div>
-        <div class="bar"><div class="en-fill" id="enf"></div></div>
-        <div class="bar xp"><div class="xp-fill" id="xpf"></div></div>
+        <div class="bar hp">
+          <div class="hp-fill" id="hpf"></div>
+          <span id="hpt">100/100</span>
+        </div>
+        <div class="bar en">
+          <div class="en-fill" id="enf"></div>
+        </div>
+        <div class="bar xp">
+          <div class="xp-fill" id="xpf"></div>
+        </div>
       </div>
       <div class="lv">Lv.<span id="lv">1</span></div>
     </div>
 
-    <div class="skills">
+    <!-- Skill bar (bawah tengah) — versi desktop -->
+    <div class="skills" id="desktopSkills">
       <div class="skill" id="sk0"><span class="key">Q</span><span class="icon">🔥</span><span class="cd"></span></div>
       <div class="skill" id="sk1"><span class="key">E</span><span class="icon">❄️</span><span class="cd"></span></div>
       <div class="skill" id="sk2"><span class="key">R</span><span class="icon">⚡</span><span class="cd"></span></div>
       <div class="skill" id="sk3"><span class="key">F</span><span class="icon">🌀</span><span class="cd"></span></div>
     </div>
 
+    <!-- Skill mobile (kanan bawah) — hanya muncul di HP -->
+    <div id="mobileSkills">
+      <button class="mob-btn" data-skill="0">🔥<span class="mcd" data-cd="0"></span></button>
+      <button class="mob-btn" data-skill="1">❄️<span class="mcd" data-cd="1"></span></button>
+      <button class="mob-btn" data-skill="2">⚡<span class="mcd" data-cd="2"></span></button>
+      <button class="mob-btn" data-skill="3">🌀<span class="mcd" data-cd="3"></span></button>
+    </div>
+
+    <!-- Minimap (kanan atas) -->
     <div class="minimap" id="mm"></div>
 
+    <!-- Info kanan (bawah minimap) -->
     <div class="info">
       <div>💎 <span id="gems">0</span></div>
       <div>🪙 <span id="coins">0</span></div>
@@ -37,36 +60,53 @@
     </div>
   </div>
 
+  <!-- Layer floating damage -->
   <div id="dmg"></div>
 
+  <!-- ================= START MENU ================= -->
   <div id="start" class="overlay">
     <h1>ETERNAL REALMS</h1>
     <div class="sub">ACTION RPG ADVENTURE</div>
     <div class="pick">
-      <div class="card" data-c="pyro"><div class="ci">🔥</div><h3>Ignis</h3><p>Pyro DPS</p></div>
-      <div class="card" data-c="cryo"><div class="ci">❄️</div><h3>Glacies</h3><p>Cryo Mage</p></div>
-      <div class="card" data-c="electro"><div class="ci">⚡</div><h3>Voltaris</h3><p>Electro Speed</p></div>
+      <div class="card" data-c="pyro">
+        <div class="ci">🔥</div>
+        <h3>Ignis</h3>
+        <p>Pyro DPS</p>
+      </div>
+      <div class="card" data-c="cryo">
+        <div class="ci">❄️</div>
+        <h3>Glacies</h3>
+        <p>Cryo Mage</p>
+      </div>
+      <div class="card" data-c="electro">
+        <div class="ci">⚡</div>
+        <h3>Voltaris</h3>
+        <p>Electro Speed</p>
+      </div>
     </div>
     <button class="btn" id="startBtn" disabled>PILIH KARAKTER</button>
     <div class="help">
-      WASD = Gerak · Mouse = Arah · Klik Kiri = Serang<br>
-      Q/E/R/F = Skill · Space = Dash · Shift = Sprint · ESC = Pause
+      WASD = Gerak &nbsp;·&nbsp; Mouse = Arah &nbsp;·&nbsp; Klik Kiri = Serang<br>
+      Q / E / R / F = Skill &nbsp;·&nbsp; Space = Dash &nbsp;·&nbsp; Shift = Sprint &nbsp;·&nbsp; ESC = Pause
     </div>
   </div>
 
+  <!-- ================= PAUSE ================= -->
   <div id="pause" class="overlay hidden">
     <h2>PAUSED</h2>
     <button class="btn" id="resumeBtn">LANJUT</button>
     <button class="btn" id="restartBtn">RESTART</button>
   </div>
 
+  <!-- ================= GAME OVER ================= -->
   <div id="over" class="overlay hidden">
     <h1>KAU GUGUR</h1>
-    <p>Wave tercapai: <span id="fWave">1</span> · Kills: <span id="fKills">0</span></p>
+    <p>Wave tercapai: <span id="fWave">1</span> &nbsp;·&nbsp; Kills: <span id="fKills">0</span></p>
     <button class="btn" id="retryBtn">COBA LAGI</button>
   </div>
 </div>
 
+<!-- ================= SCRIPTS (urutan penting!) ================= -->
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/input.js"></script>
