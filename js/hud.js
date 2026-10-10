@@ -6,38 +6,53 @@
 function updateHUD() {
   const p = G.player;
   if (!p) return;
-  document.getElementById('hpFill').style.width  = (p.hp / p.maxHp * 100) + '%';
-  document.getElementById('hpText').textContent  = Math.ceil(p.hp) + '/' + p.maxHp;
-  document.getElementById('enFill').style.width  = (p.en / p.maxEn * 100) + '%';
-  document.getElementById('xpFill').style.width  = (p.xp / p.xpNext * 100) + '%';
-  document.getElementById('levelText').textContent = p.lv;
-  document.getElementById('gems').textContent    = G.gems;
-  document.getElementById('coins').textContent   = G.coins;
-  document.getElementById('waveText').textContent = G.wave;
+  const hpf = document.getElementById('hpf');
+  const hpt = document.getElementById('hpt');
+  const enf = document.getElementById('enf');
+  const xpf = document.getElementById('xpf');
+  const lv  = document.getElementById('lv');
+
+  if (hpf) hpf.style.width = (p.hp / p.maxHp * 100) + '%';
+  if (hpt) hpt.textContent = Math.ceil(p.hp) + '/' + p.maxHp;
+  if (enf) enf.style.width = (p.en / p.maxEn * 100) + '%';
+  if (xpf) xpf.style.width = (p.xp / p.xpNext * 100) + '%';
+  if (lv)  lv.textContent  = p.lv;
+
+  const gems  = document.getElementById('gems');
+  const coins = document.getElementById('coins');
+  const wave  = document.getElementById('wave');
+  if (gems)  gems.textContent  = G.gems;
+  if (coins) coins.textContent = G.coins;
+  if (wave)  wave.textContent  = G.wave;
 }
 
 function updateSkillUI() {
   const p = G.player;
   if (!p) return;
   for (let i = 0; i < 4; i++) {
-    const el = document.getElementById('skill' + i);
+    const el = document.getElementById('sk' + i);
+    if (!el) continue;
     const s = p.skills[i];
+    const cd = el.querySelector('.cd');
+    const ic = el.querySelector('.icon');
     if (s.cdL > 0) {
       el.classList.add('cooling');
-      el.querySelector('.cd').textContent = Math.ceil(s.cdL / 1000);
+      if (cd) cd.textContent = Math.ceil(s.cdL / 1000);
     } else {
       el.classList.remove('cooling');
     }
-    el.querySelector('.icon').textContent = s.i;
+    if (ic) ic.textContent = s.i;
   }
 }
 
 function drawMinimap() {
-  const mm = document.getElementById('minimap');
+  const mm = document.getElementById('mm');
+  if (!mm) return;
   const size = mm.clientWidth;
   mm.innerHTML = '';
   const scale = 0.08;
   const p = G.player;
+  if (!p) return;
   const cx = size / 2, cy = size / 2;
 
   for (const m of G.monsters) {
